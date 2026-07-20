@@ -1,4 +1,5 @@
 import { Config } from "effect"
+import { readSclawEnvironment } from "../env/sclaw"
 
 export function truthy(key: string) {
   const value = process.env[key]?.toLowerCase()
@@ -18,8 +19,12 @@ export const Flag = {
 
   OPENCODE_AUTO_HEAP_SNAPSHOT: truthy("OPENCODE_AUTO_HEAP_SNAPSHOT"),
   OPENCODE_GIT_BASH_PATH: process.env["OPENCODE_GIT_BASH_PATH"],
-  OPENCODE_CONFIG: process.env["OPENCODE_CONFIG"],
-  OPENCODE_CONFIG_CONTENT: process.env["OPENCODE_CONFIG_CONTENT"],
+  get OPENCODE_CONFIG() {
+    return readSclawEnvironment("SCLAW_CONFIG", "OPENCODE_CONFIG")
+  },
+  get OPENCODE_CONFIG_CONTENT() {
+    return readSclawEnvironment("SCLAW_CONFIG_CONTENT", "OPENCODE_CONFIG_CONTENT")
+  },
   OPENCODE_DISABLE_AUTOUPDATE: truthy("OPENCODE_DISABLE_AUTOUPDATE"),
   OPENCODE_ALWAYS_NOTIFY_UPDATE: truthy("OPENCODE_ALWAYS_NOTIFY_UPDATE"),
   OPENCODE_DISABLE_PRUNE: truthy("OPENCODE_DISABLE_PRUNE"),
@@ -58,10 +63,10 @@ export const Flag = {
     return enabledByExperimental("OPENCODE_EXPERIMENTAL_REFERENCES")
   },
   get OPENCODE_TUI_CONFIG() {
-    return process.env["OPENCODE_TUI_CONFIG"]
+    return readSclawEnvironment("SCLAW_TUI_CONFIG", "OPENCODE_TUI_CONFIG")
   },
   get OPENCODE_CONFIG_DIR() {
-    return process.env["OPENCODE_CONFIG_DIR"]
+    return readSclawEnvironment("SCLAW_CONFIG_DIR", "OPENCODE_CONFIG_DIR")
   },
   get OPENCODE_PURE() {
     return truthy("OPENCODE_PURE")
@@ -73,6 +78,6 @@ export const Flag = {
     return process.env["OPENCODE_PLUGIN_META_FILE"]
   },
   get OPENCODE_CLIENT() {
-    return process.env["OPENCODE_CLIENT"] ?? "cli"
+    return readSclawEnvironment("SCLAW_CLIENT", "OPENCODE_CLIENT") ?? "cli"
   },
 }

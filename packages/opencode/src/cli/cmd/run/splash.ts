@@ -1,13 +1,4 @@
 // Entry and exit splash banners for direct interactive mode scrollback.
-//
-// Renders the full opencode entry logo and a compact [O] exit badge, plus
-// session metadata and the resume command. These are scrollback snapshots, so
-// they become immutable terminal history once committed.
-//
-// Both variants use a cell-based renderer. cells() classifies each character
-// in the source template as text, full-block, half-block-mix, or
-// half-block-top, and draw() renders it with foreground/background shadow
-// colors from the theme.
 import {
   BoxRenderable,
   type ColorInput,
@@ -17,8 +8,9 @@ import {
   type ScrollbackSnapshot,
   type ScrollbackWriter,
 } from "@opentui/core"
+import { Branding } from "@opencode-ai/core/branding"
+import { BrandingLogo } from "@opencode-ai/core/branding"
 import * as Locale from "@/util/locale"
-import { go } from "@/cli/logo"
 import type { RunSplashTheme } from "./theme"
 
 export const SPLASH_TITLE_LIMIT = 50
@@ -38,35 +30,6 @@ type SplashWriterInput = SplashInput & {
 export type SplashMeta = {
   title: string
   session_id: string
-}
-
-type Cell = {
-  char: string
-  mark: "text" | "full" | "mix" | "top"
-}
-
-function cells(line: string): Cell[] {
-  const list: Cell[] = []
-  for (const char of line) {
-    if (char === "_") {
-      list.push({ char: " ", mark: "full" })
-      continue
-    }
-
-    if (char === "^") {
-      list.push({ char: "▀", mark: "mix" })
-      continue
-    }
-
-    if (char === "~") {
-      list.push({ char: "▀", mark: "top" })
-      continue
-    }
-
-    list.push({ char, mark: "text" })
-  }
-
-  return list
 }
 
 function title(text: string | undefined): string {
@@ -141,105 +104,63 @@ function push(
   lines.push({ left, top, text, fg, bg, attrs })
 }
 
-function draw(
-  lines: Array<{ left: number; top: number; text: string; fg: ColorInput; bg?: ColorInput; attrs?: number }>,
-  row: string,
-  input: {
-    left: number
-    top: number
-    fg: ColorInput
-    shadow: ColorInput
-    attrs?: number
-  },
-) {
-  let x = input.left
-  for (const cell of cells(row)) {
-    if (cell.mark === "full" || cell.mark === "mix") {
-      push(lines, x, input.top, cell.char, input.fg, input.shadow, input.attrs)
-      x += 1
-      continue
-    }
-
-    if (cell.mark === "top") {
-      push(lines, x, input.top, cell.char, input.shadow, undefined, input.attrs)
-      x += 1
-      continue
-    }
-
-    push(lines, x, input.top, cell.char, input.fg, undefined, input.attrs)
-    x += 1
-  }
-}
-
 function build(input: SplashWriterInput, kind: "entry" | "exit", ctx: ScrollbackRenderContext): ScrollbackSnapshot {
   const width = Math.max(1, ctx.width)
   const meta = splashMeta(input)
   const lines: Array<{ left: number; top: number; text: string; fg: ColorInput; bg?: ColorInput; attrs?: number }> = []
   const left = input.theme.left
   const right = input.theme.right
-  const leftShadow = input.theme.leftShadow
   let height = 1
 
   if (kind === "entry") {
-    const mark = go.right.slice(1)
-    const top = 1
-    const body_left = (mark[0]?.length ?? 0) + 2
+    let row = 0
 
-    for (let i = 0; i < mark.length; i += 1) {
-      draw(lines, mark[i] ?? "", {
-        left: 0,
-        top: top + i,
-        fg: left,
-        shadow: leftShadow,
-      })
+    for (const line of BrandingLogo.titleLines) {
+      push(lines, 0, row, BrandingLogo.plainTitleLine(line), right, undefined, TextAttributes.BOLD)
+      row += 1
     }
 
-    push(lines, body_left, top, "OpenCode", right, undefined, TextAttributes.BOLD)
+    push(lines, 0, row, Branding.TAGLINE, left, undefined, TextAttributes.DIM)
+    row += 1
+
     if (input.detail) {
-      push(
-        lines,
-        body_left,
-        top + 1,
-        Locale.truncateMiddle(input.detail, Math.max(1, width - body_left)),
-        left,
-        undefined,
-      )
+      push(lines, 0, row, Locale.truncateMiddle(input.detail, Math.max(1, width)), left, undefined)
+      row += 1
     }
-    height = top + mark.length
+
+    height = row
   }
 
   if (kind === "exit") {
-    const mark = go.right.slice(1)
-    const top = 1
-    const body_left = (mark[0]?.length ?? 0) + 2
-    const session = "Session  "
-    const label = "Continue "
+    let row = 0
 
-    for (let i = 0; i < mark.length; i += 1) {
-      draw(lines, mark[i] ?? "", {
-        left: 0,
-        top: top + i,
-        fg: left,
-        shadow: leftShadow,
-      })
+    for (const line of BrandingLogo.titleLines) {
+      push(lines, 0, row, BrandingLogo.plainTitleLine(line), right, undefined, TextAttributes.BOLD)
+      row += 1
     }
+
+    push(lines, 0, row, Branding.TAGLINE, left, undefined, TextAttributes.DIM)
+    row += 1
 
     if (input.showSession !== false) {
-      push(lines, body_left, top, session, left, undefined, TextAttributes.DIM)
-      push(lines, body_left + session.length, top, meta.title, right, undefined, TextAttributes.BOLD)
+      push(lines, 0, row, "Session  ", left, undefined, TextAttributes.DIM)
+      push(lines, "Session  ".length, row, meta.title, right, undefined, TextAttributes.BOLD)
+      row += 1
     }
 
-    push(lines, body_left, top + 1, label, left, undefined, TextAttributes.DIM)
+    push(lines, 0, row, "Continue ", left, undefined, TextAttributes.DIM)
     push(
       lines,
-      body_left + label.length,
-      top + 1,
-      `opencode --mini -s ${meta.session_id}`,
+      "Continue ".length,
+      row,
+      `${Branding.CLI_BINARY} --mini -s ${meta.session_id}`,
       right,
       undefined,
       TextAttributes.BOLD,
     )
-    height = top + mark.length
+    row += 1
+
+    height = row
   }
 
   const root = new BoxRenderable(ctx.renderContext, {

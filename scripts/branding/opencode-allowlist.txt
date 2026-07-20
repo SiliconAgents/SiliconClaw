@@ -1,0 +1,21 @@
+# User-facing OpenCode references allowed in the SCLAW codebase.
+# Format: path:line:reason
+#
+# License and attribution
+THIRD_PARTY_NOTICES.md
+LICENSE
+docs/upstream/
+
+# Migration compatibility
+packages/core/src/env/sclaw.ts
+packages/opencode/src/cli/cmd/migrate.ts
+packages/core/src/branding.ts
+
+# Legacy configuration discovery
+packages/opencode/src/config/config.ts
+packages/opencode/src/config/paths.ts
+packages/core/src/config.ts
+packages/core/src/flag/flag.ts
+
+# Internal package namespace (Phase 4 migration pending)
+packages/

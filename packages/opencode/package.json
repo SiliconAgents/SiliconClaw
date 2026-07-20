@@ -16,7 +16,7 @@
     "dev:temporary": "bun run --conditions=browser ./src/temporary.ts"
   },
   "bin": {
-    "opencode": "./bin/opencode"
+    "sclaw": "./bin/sclaw.cjs"
   },
   "exports": {
     "./*": "./src/*.ts"

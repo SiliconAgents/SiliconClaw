@@ -4,10 +4,12 @@ import { xdgData, xdgCache, xdgConfig, xdgState } from "xdg-basedir"
 import os from "os"
 import { Context, Effect, Layer } from "effect"
 import { Flock } from "./util/flock"
+import { Branding } from "./branding"
+import { readSclawEnvironment } from "./env/sclaw"
 import { Flag } from "./flag/flag"
 import { makeGlobalNode } from "./effect/app-node"
 
-const app = "opencode"
+const app = Branding.SLUG
 const data = path.join(xdgData!, app)
 const cache = path.join(xdgCache!, app)
 const config = path.join(xdgConfig!, app)
@@ -16,7 +18,7 @@ const tmp = path.join(os.tmpdir(), app)
 
 const paths = {
   get home() {
-    return process.env.OPENCODE_TEST_HOME ?? os.homedir()
+    return readSclawEnvironment("SCLAW_TEST_HOME", "OPENCODE_TEST_HOME") ?? os.homedir()
   },
   data,
   bin: path.join(cache, "bin"),
